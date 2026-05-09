@@ -1,0 +1,13 @@
+{
+  "name": "@bloknotik/ui",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared UI components for Bloknotik Mistera Mariana apps",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "echo 'No build step yet — add shared components here'"
+  }
+}

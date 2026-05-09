@@ -1,0 +1,156 @@
+// Prisma schema for Bloknotik driving school
+// Matches business_rules.md data models
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────
+
+enum Role {
+  student
+  instructor
+  manager
+}
+
+enum SlotStatus {
+  available
+  booked
+  completed
+  cancelled
+  no_show
+}
+
+enum BookingStatus {
+  confirmed
+  completed
+  cancelled
+  no_show
+}
+
+enum WaitlistStatus {
+  waiting
+  notified
+  confirmed
+  expired
+}
+
+// ─── Models ───────────────────────────────────────────
+
+model User {
+  id                     String   @id @default(uuid())
+  email                  String   @unique
+  password_hash          String
+  name                   String
+  role                   Role
+  assigned_instructor_id String?
+  total_hours_driven     Float    @default(0)
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  // Self-relation: Instructor ↔ Students
+  assigned_instructor   User?  @relation("InstructorStudents", fields: [assigned_instructor_id], references: [id])
+  students              User[] @relation("InstructorStudents")
+
+  // Instructor's slots
+  slots Slot[] @relation("InstructorSlots")
+
+  // Student's bookings
+  bookings_as_student Booking[] @relation("StudentBookings")
+
+  // Waitlist entries (student)
+  waitlist_entries WaitlistEntry[]
+
+  // Lesson notes
+  lesson_notes_written  LessonNote[] @relation("InstructorNotes")
+  lesson_notes_received LessonNote[] @relation("StudentNotes")
+
+  // Refresh tokens
+  refresh_tokens RefreshToken[]
+
+  @@index([role])
+  @@index([assigned_instructor_id])
+}
+
+model Slot {
+  id            String     @id @default(uuid())
+  instructor_id String
+  start_time    DateTime
+  end_time      DateTime
+  status        SlotStatus @default(available)
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
+
+  instructor User     @relation("InstructorSlots", fields: [instructor_id], references: [id])
+  booking    Booking?
+
+  @@index([instructor_id, start_time, end_time])
+  @@index([instructor_id, status])
+}
+
+model Booking {
+  id           String        @id @default(uuid())
+  slot_id      String        @unique // Protection against race conditions (§2.4)
+  student_id   String
+  status       BookingStatus @default(confirmed)
+  cancelled_by String? // 'student' | 'instructor' | 'manager'
+  cancel_reason String?
+  notes        String?
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+
+  slot    Slot @relation(fields: [slot_id], references: [id])
+  student User @relation("StudentBookings", fields: [student_id], references: [id])
+
+  lesson_note LessonNote?
+
+  @@index([student_id, status])
+  @@index([student_id, created_at])
+}
+
+model WaitlistEntry {
+  id            String         @id @default(uuid())
+  student_id    String
+  instructor_id String
+  date          DateTime       @db.Date
+  status        WaitlistStatus @default(waiting)
+  created_at    DateTime       @default(now())
+
+  student User @relation(fields: [student_id], references: [id])
+
+  @@index([instructor_id, date, status])
+  @@index([student_id, status])
+}
+
+model LessonNote {
+  id            String   @id @default(uuid())
+  booking_id    String   @unique
+  instructor_id String
+  student_id    String
+  text          String
+  created_at    DateTime @default(now())
+
+  booking    Booking @relation(fields: [booking_id], references: [id])
+  instructor User    @relation("InstructorNotes", fields: [instructor_id], references: [id])
+  student    User    @relation("StudentNotes", fields: [student_id], references: [id])
+
+  @@index([student_id, created_at])
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token      String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([token])
+}

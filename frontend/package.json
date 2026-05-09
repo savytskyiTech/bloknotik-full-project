@@ -1,0 +1,35 @@
+{
+  "name": "bloknotik-mistera-mariana",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev:instructor": "pnpm --filter @bloknotik/instructor dev",
+    "dev:manager": "pnpm --filter @bloknotik/manager dev",
+    "dev:student": "pnpm --filter @bloknotik/student dev",
+    "dev:all": "pnpm --parallel --filter './apps/*' dev",
+    "build:instructor": "pnpm --filter @bloknotik/instructor build",
+    "build:manager": "pnpm --filter @bloknotik/manager build",
+    "build:student": "pnpm --filter @bloknotik/student build",
+    "build:all": "pnpm --filter './apps/*' build",
+    "preview:instructor": "pnpm --filter @bloknotik/instructor preview",
+    "preview:manager": "pnpm --filter @bloknotik/manager preview",
+    "preview:student": "pnpm --filter @bloknotik/student preview"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.1.12",
+    "@vitejs/plugin-react": "4.7.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tailwindcss": "4.1.12",
+    "vite": "6.3.5"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "6.3.5"
+    },
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "esbuild"
+    ]
+  }
+}
